@@ -1,87 +1,89 @@
 # skill-linter
 
-> **The eslint for Agent Skills.** Lint `SKILL.md` files for spec compliance, quality and security — before you publish them to an ecosystem where most skills are broken.
+> **Agent Skills 界的 eslint。** 在把 `SKILL.md` 发布到技能生态之前，先检查它的规范合规、质量与安全——毕竟现在大多数技能都是坏的。
 
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-20%2F20%20passing-brightgreen)](#running-tests)
+[![Tests](https://img.shields.io/badge/tests-20%2F20%20passing-brightgreen)](#运行测试)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](#)
 
-Agent skills are the new npm — and like early npm, most of what gets published is broken. An ecosystem-scale study of **138,133 public SKILL.md files** found **89.3% violate the official specification** and **91.8% contain at least one defect** ([arXiv:2608.08453](https://arxiv.org/abs/2608.08453)). The most common defects are also the most harmful: **routing defects** — a skill whose `description` can't be discovered by the agent might as well not exist.
+[Agent Skills](https://agentskills.io) 是新的 npm——而就像早期的 npm 一样，现在发布出去的东西大部分是坏的。一项面向生态规模的研究（覆盖 **138,133 个公开 SKILL.md 文件**）发现：**89.3% 违反官方规范**，**91.8% 至少含一个缺陷**（[arXiv:2608.08453](https://arxiv.org/abs/2608.08453)）。最常见、也最致命的缺陷是 **路由缺陷**——一个 `description` 无法被智能体发现的技能，跟不存在没两样。
 
-`skill-lint` turns that research into a runnable tool. It's a **pure, deterministic checker**: no model calls, sub-second feedback, CI-friendly.
+`skill-lint` 把这项研究变成一个可以实际跑起来的工具。它是一个 **纯静态、确定性的检查器**：不调用任何模型、亚秒级反馈、对 CI 友好。
 
-## Contents
+[English version / 英文版](./README_EN.md)
 
-- [Why](#why)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Options](#options)
-- [Rules](#rules)
-- [Exit codes & CI](#exit-codes--ci)
-- [Development](#development)
-- [Roadmap](#roadmap)
-- [Background & sources](#background--sources)
-- [License](#license)
+## 目录
 
-## Why
+- [为什么需要](#为什么需要)
+- [功能特性](#功能特性)
+- [安装](#安装)
+- [使用](#使用)
+- [参数](#参数)
+- [规则](#规则)
+- [退出码与 CI](#退出码与-ci)
+- [开发](#开发)
+- [路线图](#路线图)
+- [背景与来源](#背景与来源)
+- [许可证](#许可证)
 
-| Without `skill-lint` | With `skill-lint` |
+## 为什么需要
+
+| 没有 `skill-lint` | 用了 `skill-lint` |
 |---|---|
-| Ship a skill, agents never trigger it (bad `description`) | Catch routing defects before publish |
-| Hardcoded API keys leak into a public pack | Flag secrets, dangerous commands, safety bypasses |
-| "It works on my machine" quality drift | Deterministic, shareable quality gate |
-| Manual review doesn't scale to 138K skills | One command, runs in CI on every change |
+| 发布一个技能，智能体从来不触发它（`description` 写错） | 在发布前抓出路由缺陷 |
+| 硬编码的 API key 泄露进公开包 | 标出密钥、危险命令、安全绕过 |
+| "在我机器上能用"的质量漂移 | 确定性的、可共享的质量闸门 |
+| 人工审查根本扩不到 13.8 万个技能 | 一条命令，每次变更都在 CI 里跑 |
 
-## Features
+## 功能特性
 
-- **Spec-aware** — mirrors the official [agentskills.io](https://agentskills.io) specification.
-- **Two-tier severity** — `spec` (violates the spec) vs `best-practice` (peer guidance), so you can gate CI on what actually matters.
-- **Security rules** — catches hardcoded secrets, dangerous commands, and permission/safety bypasses.
-- **Actionable findings** — every finding carries a `fix_hint` telling you *what* to change, not just *that* something is wrong.
-- **Zero model calls** — pure static analysis; instant, deterministic, cheap to run anywhere.
-- **CI-ready** — JSON or human output, with an exit code you can fail a build on.
+- **懂规范**——对齐官方 [agentskills.io](https://agentskills.io) 规范。
+- **两级严重度**——`spec`（违反规范）对比 `best-practice`（同行建议），所以你能只把真正重要的挡在 CI 门外。
+- **安全规则**——抓硬编码密钥、危险命令、以及权限/安全绕过。
+- **可执行的检查结果**——每条 finding 都带一个 `fix_hint`，告诉你*改什么*，而不只是*哪里错了*。
+- **零模型调用**——纯静态分析；即时、确定性、哪里都能廉价跑。
+- **CI 友好**——JSON 或人读输出，带一个能让你构建失败退出的退出码。
 
-## Installation
+## 安装
 
-`skill-linter` is not yet on PyPI; install from source:
+`skill-linter` 还没上 PyPI，从源码安装：
 
 ```bash
-# clone, then:
+# 先 clone，然后：
 pip install -e .
 
-# or install directly from GitHub
+# 或直接装 GitHub 上的版本
 pip install git+https://github.com/pkupt/skill-linter.git
 ```
 
-> PyPI publish (`pip install skill-linter`) is on the roadmap.
+> 上 PyPI（`pip install skill-linter`）在路线图上。
 
-Requires **Python 3.9+** and `pyyaml`.
+需要 **Python 3.9+** 和 `pyyaml`。
 
-## Usage
+## 使用
 
 ```bash
-skill-lint .                       # lint the current directory (recursive)
-skill-lint my-skill                # lint a single skill folder
-skill-lint . --format json        # machine-readable output
-skill-lint . --fail-on warning    # fail the run on warnings too
+skill-lint .                       # 检查当前目录（递归）
+skill-lint my-skill                # 检查单个技能文件夹
+skill-lint . --format json        # 机器可读输出
+skill-lint . --fail-on warning    # 连 warning 也视为失败
 skill-lint --version              # 0.1.0
 ```
 
-### Example output
+### 输出示例
 
 ```text
 $ skill-lint my-skill
 my-skill/SKILL.md
-  [error]   r1-name-invalid: `name` must be lowercase letters/digits/hyphens; got 'My Demo Skill'
-  [error]   r5-hardcoded-secrets: possible hardcoded secret found
-  [warning] r1-description-no-trigger: description has no trigger language
+  [error]   r1-name-invalid: `name` 必须是小写字母/数字/连字符；实际是 'My Demo Skill'
+  [error]   r5-hardcoded-secrets: 发现疑似硬编码密钥
+  [warning] r1-description-no-trigger: description 里没有触发词
 
-=== 1 skill(s), 2 error(s), 9 finding(s) ===   # exit code 1 -> CI fails
+=== 1 skill(s), 2 error(s), 9 finding(s) ===   # 退出码 1 -> CI 失败
 ```
 
-### JSON output
+### JSON 输出
 
 ```bash
 skill-lint my-skill --format json
@@ -104,53 +106,53 @@ skill-lint my-skill --format json
 ]
 ```
 
-## Options
+## 参数
 
-| flag | values | default | meaning |
+| 参数 | 取值 | 默认 | 含义 |
 |---|---|---|---|
-| `path` | directory / file | `.` | what to lint (recursive for directories) |
-| `--format` | `text`, `json` | `text` | output format |
-| `--fail-on` | `error`, `warning`, `info` | `error` | minimum severity that fails the run (sets exit code) |
-| `--version` | - | - | print version and exit |
+| `path` | 目录 / 文件 | `.` | 要检查的对象（目录则递归） |
+| `--format` | `text`, `json` | `text` | 输出格式 |
+| `--fail-on` | `error`, `warning`, `info` | `error` | 触发失败（设置退出码）的最低严重度 |
+| `--version` | - | - | 打印版本并退出 |
 
-## Rules
+## 规则
 
-Rules mirror the paper's two-tier taxonomy. **Tier `spec`** = violates the official agentskills.io specification; **tier `best-practice`** = peer-reviewed / industry guidance.
+规则对应论文的两级分类法。**Tier `spec`** = 违反官方 agentskills.io 规范；**tier `best-practice`** = 同行评审 / 行业建议。
 
-### R1 - Routing (the discovery killer)
+### R1 - 路由（发现的杀手）
 
-| rule | tier | fires when |
+| 规则 | tier | 触发条件 |
 |---|---|---|
-| `r1-name-missing` | spec | no `name` in frontmatter |
-| `r1-name-invalid` | spec | name not lowercase/digits/hyphens, or > 64 chars |
-| `r1-name-folder-mismatch` | spec | name != folder name (installers sanitize - surprises teammates) |
-| `r1-description-missing` | spec | no `description` (the ONLY routing signal) |
-| `r1-description-too-short` | spec | < 40 chars, can't carry trigger context |
-| `r1-description-no-trigger` | spec | no trigger language ("Use when...") - agent can't tell WHEN |
+| `r1-name-missing` | spec | frontmatter 里没有 `name` |
+| `r1-name-invalid` | spec | name 不是小写/数字/连字符，或长度 > 64 |
+| `r1-name-folder-mismatch` | spec | name != 文件夹名（安装器会改，坑队友） |
+| `r1-description-missing` | spec | 没有 `description`（这是唯一的路由信号） |
+| `r1-description-too-short` | spec | < 40 字符，承载不了触发上下文 |
+| `r1-description-no-trigger` | spec | 没有触发词（"Use when..."），智能体不知道*何时*用 |
 
-### R2 - Body
+### R2 - 正文
 
-| rule | tier | fires when |
+| 规则 | tier | 触发条件 |
 |---|---|---|
-| `r2-body-too-long` | spec | body > 500 lines (adherence drops, loads slow) |
-| `r2-body-non-actionable` | best-practice | vague wording the agent can't verify ("validate properly", "best") |
-| `r2-name-as-heading` | best-practice | body re-heads the skill name |
-| `r2-description-duplicated` | best-practice | description copy-pasted into body |
+| `r2-body-too-long` | spec | 正文 > 500 行（遵循度下降、加载慢） |
+| `r2-body-non-actionable` | best-practice | 智能体无法验证的模糊措辞（"validate properly"、"best"） |
+| `r2-name-as-heading` | best-practice | 正文把技能名又当标题写了一遍 |
+| `r2-description-duplicated` | best-practice | description 被原样复制进正文 |
 
-### R5 - Security (install-then-trust is not sustainable)
+### R5 - 安全（装完就信任是不可持续的）
 
-| rule | tier | fires when |
+| 规则 | tier | 触发条件 |
 |---|---|---|
-| `r5-hardcoded-secrets` | best-practice | API keys / tokens / credentials in the skill |
-| `r5-dangerous-commands` | best-practice | `rm -rf`, `mkfs`, `:(){:|:&};:` and friends |
-| `r5-safety-bypass` | best-practice | `--no-verify`, `--force`, `bypassPermissions` |
-| `r5-suppress-errors` | best-practice | `2>/dev/null` hides failures the agent should react to |
+| `r5-hardcoded-secrets` | best-practice | 技能里出现 API key / token / 凭据 |
+| `r5-dangerous-commands` | best-practice | `rm -rf`、`mkfs`、`:(){:|:&};:` 这类命令 |
+| `r5-safety-bypass` | best-practice | `--no-verify`、`--force`、`bypassPermissions` |
+| `r5-suppress-errors` | best-practice | `2>/dev/null` 把本该反应的失败藏起来 |
 
-Every finding is actionable: each carries a `fix_hint` telling the author **what** to change.
+每条 finding 都是可执行的：每条都带一个 `fix_hint` 告诉作者**改什么**。
 
-## Exit codes & CI
+## 退出码与 CI
 
-Exit codes: `0` clean - `1` findings at/above the `--fail-on` level (default `error`).
+退出码：`0` 干净 - `1` 出现达到/高于 `--fail-on` 级别（默认 `error`）的 finding。
 
 ```yaml
 # .github/workflows/lint.yml
@@ -162,11 +164,11 @@ Exit codes: `0` clean - `1` findings at/above the `--fail-on` level (default `er
 - run: skill-lint . --fail-on error
 ```
 
-Use `--format json` to post findings into your own review pipeline or dashboard.
+用 `--format json` 把 finding 接入你自己的审查流水线或看板。
 
-## Development
+## 开发
 
-### Setup
+### 环境搭建
 
 ```bash
 git clone https://github.com/pkupt/skill-linter.git
@@ -174,38 +176,42 @@ cd skill-linter
 pip install -e ".[dev]"
 ```
 
-### Running tests
+### 运行测试
 
 ```bash
 pytest
 ```
 
-> If you hit an `iniconfig`/pytest conflict from a mixed Python environment, run tests inside a clean virtualenv (`python -m venv .venv && .venv/Scripts/activate && pip install -e ".[dev]" && pytest`).
+> 如果你的 Python 环境混了多个版本、遇到 `iniconfig`/pytest 冲突，在一个干净的虚拟环境里跑测试（`python -m venv .venv && .venv/Scripts/activate && pip install -e ".[dev]" && pytest`）。
 
-### Adding a rule
+### 新增一条规则
 
-1. Subclass `Rule` in `skill_linter/rules/base.py` and implement `check(context) -> List[Finding]`.
-2. Drop the class into the relevant module (`routing.py`, `body.py`, `security.py`).
-3. Register it in `skill_linter/rules/__init__.py` (the `run_all` collection).
-4. Add a positive and a negative fixture in `tests/test_rules.py`.
+1. 在 `skill_linter/rules/base.py` 里继承 `Rule`，实现 `check(context) -> List[Finding]`。
+2. 把类放进对应模块（`routing.py`、`body.py`、`security.py`）。
+3. 在 `skill_linter/rules/__init__.py` 里注册（加进 `run_all` 的集合）。
+4. 在 `tests/test_rules.py` 里加一个正向 fixture 和一个负向 fixture。
 
-Finding fields: `rule`, `tier` (`spec` | `best-practice`), `severity` (`error` | `warning` | `info`), `message`, `fix_hint`.
+Finding 字段：`rule`、`tier`（`spec` | `best-practice`）、`severity`（`error` | `warning` | `info`）、`message`、`fix_hint`。
 
-## Roadmap
+## 路线图
 
-- [x] **v0.1** - rule engine + R1/R2/R5 (14 checks), JSON/text output, CI exit codes
-- [ ] publish to PyPI (`pip install skill-linter`)
-- [ ] `--fix` auto-repair (fill frontmatter, split `references/`)
-- [ ] routing stress-test mode (BM25 lower-bound probe: do clean skills actually get retrieved?)
-- [ ] plugin rules, GitHub Action, VS Code extension
-- [ ] quality signals (eval pass rate, adoption) for skill marketplaces
+- [x] **v0.1** - 规则引擎 + R1/R2/R5（14 个检查）、JSON/text 输出、CI 退出码
+- [ ] 上 PyPI（`pip install skill-linter`）
+- [ ] `--fix` 自动修复（补 frontmatter、拆分 `references/`）
+- [ ] 路由压力测试模式（BM25 下界探针：干净的技能真的能被检索到吗？）
+- [ ] 插件化规则、GitHub Action、VS Code 扩展
+- [ ] 面向技能市场的质量信号（eval 通过率、采用度）
 
-## Background & sources
+## 背景与来源
 
-- **What Keeps Agent Skills from Being Reusable? Evidence from 138K SKILL.md Files** - arXiv:[2608.08453](https://arxiv.org/abs/2608.08453) (First Workshop on Agent Skills, 2026-05-26): two-tier defect taxonomy (7 categories, 31 checks), the routing stress test, and 12 evidence-based authoring guidelines.
-- [agentskills.io](https://agentskills.io) - the open Agent Skills specification (Anthropic -> open standard, 2025-12).
-- [ClawHavoc, 2026-02](https://digitalapplied.com/blog/agent-skill-packs-package-ecosystem-supply-chain-risk) - 2,419 malicious skills pulled from ClawHub: why security rules matter.
+- **What Keeps Agent Skills from Being Reusable? Evidence from 138K SKILL.md Files** - arXiv:[2608.08453](https://arxiv.org/abs/2608.08453)（Agent Skills 首届研讨会，2026-05-26）：两级缺陷分类法（7 类、31 项检查）、路由压力测试、以及 12 条有证据支撑的写作指南。
+- [agentskills.io](https://agentskills.io) - 开放的 Agent Skills 规范（Anthropic → 开放标准，2025-12）。
+- [ClawHavoc, 2026-02](https://digitalapplied.com/blog/agent-skill-packs-package-ecosystem-supply-chain-risk) - 从 ClawHub 扒出的 2,419 个恶意技能：为什么安全规则重要。
 
-## License
+## 许可证
 
 [MIT](./LICENSE)
+
+---
+
+主理人：pkupt · 项目启动：2026-08-14 · [English](./README_EN.md)
