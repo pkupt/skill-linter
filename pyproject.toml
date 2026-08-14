@@ -9,6 +9,7 @@ description = "Lint Agent Skills (SKILL.md) for spec compliance, quality, and se
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
+dependencies = ["pyyaml>=6"]
 keywords = ["agent", "skills", "SKILL.md", "linter", "agentskills", "LLM"]
 classifiers = [
     "Programming Language :: Python :: 3",
