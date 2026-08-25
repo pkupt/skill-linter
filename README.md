@@ -1,15 +1,15 @@
 # skill-linter
 
-> **Agent Skills 界的 eslint。** 在把 `SKILL.md` 发布到技能生态之前，先检查它的规范合规、质量与安全——毕竟现在大多数技能都是坏的。
+> **The eslint of Agent Skills.** Before publishing `SKILL.md` to the skills ecosystem, check its spec compliance, quality, and security—because most skills today are broken.
 
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-20%2F20%20passing-brightgreen)](#运行测试)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](#)
 
-[Agent Skills](https://agentskills.io) 是新的 npm——而就像早期的 npm 一样，现在发布出去的东西大部分是坏的。一项面向生态规模的研究（覆盖 **138,133 个公开 SKILL.md 文件**）发现：**89.3% 违反官方规范**，**91.8% 至少含一个缺陷**（[arXiv:2608.08453](https://arxiv.org/abs/2608.08453)）。最常见、也最致命的缺陷是 **路由缺陷**——一个 `description` 无法被智能体发现的技能，跟不存在没两样。
+[Agent Skills](https://agentskills.io) is the new npm—and like early npm, most published skills are broken. An ecosystem-scale study (covering **138,133 public SKILL.md files**) found: **89.3% violate the official spec**, **91.8% have at least one defect** ([arXiv:2608.08453](https://arxiv.org/abs/2608.08453)). The most common and most fatal defect is **routing**—a skill whose `description` cannot be discovered by an agent is effectively nonexistent.
 
-`skill-lint` 把这项研究变成一个可以实际跑起来的工具。它是一个 **纯静态、确定性的检查器**：不调用任何模型、亚秒级反馈、对 CI 友好。
+`skill-lint` turns this research into a runnable tool. It is a **purely static, deterministic checker**: no model calls, sub-second feedback, CI-friendly.
 
 [English version / 英文版](./README_EN.md)
 
